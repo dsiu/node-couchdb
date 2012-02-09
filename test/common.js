@@ -1,6 +1,6 @@
-var sys = require('sys');
-global.p = sys.p;
-global.puts = sys.puts;
+var util = require('util');
+global.p = util.p;
+global.puts = util.puts;
 
 global.couchdb = require('../lib/couchdb');
 global.assert = require('assert');
@@ -11,4 +11,4 @@ global.checkCallbacks = function(callbacks) {
 };
 
 // Provide a port/host here if your local db has a non-default setup
-GLOBAL.client = couchdb.createClient();
+GLOBAL.client = couchdb.createClient(undefined, undefined, undefined, undefined, 0);

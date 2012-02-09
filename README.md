@@ -1,13 +1,11 @@
-# IMPORTANT - This module is no longer maintained
+# IMPORTANT: THIS MODULE IS NOT ACTIVELY MAINTAINED
 
-I no longer have an active couchdb project, so maintaining this driver has become
-very hard for me. For now I have decided to stop maintainence until either:
+While I will click the merge button on reasonably looking pull requests and
+also publish npm versions, I do not have time to do any maintainence on this
+module beyond that.
 
-* Somebody steps up and wants to become the maintainer
-* I have an active couchdb project again
-
-Meanwhile I can recommend you to watch [this jsconf.eu video](http://jsconf.eu/2010/speaker/nodejs_couchdb_crazy_delicious.html)
-where [Mikeal Rogers](https://github.com/mikeal) from [CouchOne](http://www.couch.io/) looks at the various available modules.
+I would love for somebody to take over this project, please get in touch if
+you are interested.
 
 # Node.js CouchDB module
 
@@ -15,32 +13,29 @@ A thin node.js idiom based module for [CouchDB's REST API](http://wiki.apache.or
 
 ## Tutorial
 
-Installation is simple:
+Installation is simple from [NPM](http://npmjs.org/):
 
-    $ cd ~/src
-    $ git clone git://github.com/felixge/node-couchdb.git
-    $ cd ~/.node_libraries
-    $ ln -s ~/src/node-couchdb couchdb
+    $ npm install felix-couchdb
 
 To use the library, create a new file called `my-couch-adventure.js`:
 
     var
-      sys = require('sys'),
-      couchdb = require('couchdb'),
+      util = require('util'),
+      couchdb = require('felix-couchdb'),
       client = couchdb.createClient(5984, 'localhost'),
       db = client.db('my-db');
 
     db
       .saveDoc('my-doc', {awesome: 'couch fun'}, function(er, ok) {
         if (er) throw new Error(JSON.stringify(er));
-        sys.puts('Saved my first doc to the couch!');
+        util.puts('Saved my first doc to the couch!');
       });
 
     db
       .getDoc('my-doc', function(er, doc) {
         if (er) throw new Error(JSON.stringify(er));
-        sys.puts('Fetched my new doc from couch:');
-        sys.p(doc);
+        util.puts('Fetched my new doc from couch:');
+        util.p(doc);
       });
 
 If you are wondering if there is a race-condition in the above example, the answer is no. Each `couchdb.Client` uses an internal queue for its requests, just like `http.Client`. This guarantees ordering. If you want to perform multiple requests at once, use multiple `couchdb.Client` instances.
@@ -49,7 +44,7 @@ If you are wondering if there is a race-condition in the above example, the answ
 
 ### Callbacks
 
-All asynchronous functions are performed with callbacks.  Callback functions are always the last argument, and always receive one or two arguments.  The first argument is an error object or `null` if an error occurs.  The second is the data returned by the function in question, if appropriate.
+All asynchronous functions are performed with callbacks.  Callback functions are always the last argument, and always receive one or two arguments.  The first argument is an error object or `null` if no error occurs.  The second is the data returned by the function in question, if appropriate.
 
 The callback argument is optional.  If not supplied, then errors and return values will be silently ignored.
 
@@ -100,11 +95,14 @@ Takes the path of a `file` and callback receives a JS object suitable for inline
 
 Check `lib/dep/mime.js` for a list of recognized file types.
 
-### couchdb.createClient([port, host, user, pass])
+### couchdb.createClient([port, host, user, pass, maxListeners])
 
 Creates a new `couchdb.Client` for a given `port` (default: `5984`) and `host` (default: `'localhost'`). This client will queue all requests that are send through it, so ordering of requests is always guaranteed. Use multiple clients for parallel operations.
 
 If the optional `user` and `pass` arguments are supplied, all requests will be made with HTTP Basic Authorization
+
+If the optional `maxListeners` is supplied - module uses emitter.setMaxListeners method. It may be usefull if you use many couchdb requests and don't want to see warnings.
+Default Node.js value for this == 11 listeners; if `maxListeners` == 0 then warnings are off.
 
 ### client.host
 
@@ -203,9 +201,9 @@ Wrapper for [PUT /db-name](http://wiki.apache.org/couchdb/HTTP_database_API#PUT_
 
 Wrapper for [DELETE /db-name](http://wiki.apache.org/couchdb/HTTP_database_API#DELETE).
 
-### db.getDoc(id)
+### db.getDoc(id, [rev])
 
-Wrapper for [GET /db-name/doc-id](http://wiki.apache.org/couchdb/HTTP_Document_API#GET). Fetches a document with a given `id` from the database.
+Wrapper for [GET /db-name/doc-id\[?rev=\]](http://wiki.apache.org/couchdb/HTTP_Document_API#GET). Fetches a document with a given `id` and optional `rev` from the database.
 
 ### db.saveDoc(id, doc)
 
@@ -266,6 +264,9 @@ Wrapper for [GET /db-name/\_all\_docs](http://wiki.apache.org/couchdb/HTTP_Docum
 
 Wrapper for [GET /db-name/\_all\_docs\_by\_seq](http://wiki.apache.org/couchdb/HTTP_Document_API#all_docs_by_seq).
 
+Replaced by [GET /db-name/\_changes](http://wiki.apache.org/couchdb/HTTP_database_API#Changes) as of CouchDB 0.11.
+Consider using `db.changes` or `db.changesStream`.
+
 ### db.compact([design])
 
 Wrapper for [POST /db-name/\_compact/design-name](http://wiki.apache.org/couchdb/HTTP_view_API#View_Compaction). `design` provides the name of the design to invoke compact for, otherwise the whole db is used.
@@ -296,7 +297,7 @@ Returns an `events.EventEmitter` stream that emits the following events:
 
 * `data(change)`: Emitted for each change line in the stream. The `change` parameter holds the change object.
 * `heartbeat`: Emitted for each heartbeat send by CouchDB, no need to check this for most stuff.
-* `end(hadError)`: Emitted if the stream ends. This should not happen unless you manually invoke `stream.end()`.
+* `end(hadError)`: Emitted if the stream ends. This should not happen unless you manually invoke `stream.close()`.
 
 See the [CouchDB docs](http://wiki.apache.org/couchdb/HTTP_database_API#Changes) for available `query` parameters.
 
@@ -312,3 +313,4 @@ See the [CouchDB docs](http://wiki.apache.org/couchdb/HTTP_database_API#Changes)
 
 * Streaming attachments is not supported at this point (patches welcome)
 * Etags are only available via client.request({full: true})
+

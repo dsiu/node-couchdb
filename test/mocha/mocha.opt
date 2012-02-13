@@ -1,0 +1,4 @@
+--require should
+--growl
+--bail
+--timeout 10000
